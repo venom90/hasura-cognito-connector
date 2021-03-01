@@ -1,2 +1,3 @@
-# hasura-cognito-connector
-Hasura and AWS Cognito Connector
+# Hasura and AWS Cognitor Connector
+
+Work in Progress
