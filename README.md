@@ -1,3 +1,3 @@
-# Hasura and AWS Cognitor Connector
+# Hasura and AWS Cognito Connector
 
 Work in Progress
