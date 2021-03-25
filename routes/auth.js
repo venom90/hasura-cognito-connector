@@ -23,7 +23,6 @@ module.exports = app => {
 
       // Accept multiple user attributes including custom attributes as configured in Cognito user pool
       for (let i = 0; i < attributes.length; i++) {
-        new AmazonCognitoIdentity
         attributeList.push(new AmazonCognitoIdentity.CognitoUserAttribute({
           Name: attributes[i].name,
           Value: attributes[i].value
@@ -39,10 +38,10 @@ module.exports = app => {
 
         res.send(data.user);
       })
-    } catch({message}) {
-      res.send({
+    } catch ({message}) {
+      res.status(500).send({
         error: true,
-        messsage
+        message
       });
     }
   });
@@ -58,18 +57,47 @@ module.exports = app => {
         Username: username,
         Pool: userPool
       }
-  
+
       const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
       cognitoUser.confirmRegistration(code, true, (err, data) => {
         if (err) {
           traceError(`Error while confirming registration (auth.js): ${err.message}`);
-          return res.send({error: true, message: err.message});
+          return res.send({ error: true, message: err.message });
         }
-  
+
         res.send(data);
       });
-    } catch({message}) {
-      res.send({
+    } catch ({ message }) {
+      res.status(500).send({
+        error: true,
+        messsage
+      });
+    }
+  });
+
+  /**
+   * @description Resend Confirmation code
+   * @method POST
+   */
+  app.post('/auth/resendconfirmationcode', (req, res) => {
+    try {
+      const { username } = req.body;
+      const userData = {
+        Username: username,
+        Pool: userPool
+      }
+
+      const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+      cognitoUser.resendConfirmationCode((err, data) => {
+        if (err) {
+          traceError(`Error while resending confirmation code (auth.js): ${err.message}`);
+          return res.send({ error: true, message: err.message });
+        }
+
+        res.send(data);
+      });
+    } catch ({ message }) {
+      res.status(500).send({
         error: true,
         messsage
       });
