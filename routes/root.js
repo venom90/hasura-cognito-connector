@@ -1,6 +1,9 @@
 
 module.exports = app => {
-  app.get('/', (req, res) => {
-    res.send('Hello root');
+  /**
+   * @description Health API for k8s probe or monitoring tools
+   */
+  app.get('/health', (req, res) => {
+    res.status(200).send('ok');
   })
 }
