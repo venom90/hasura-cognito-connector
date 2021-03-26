@@ -1,4 +1,4 @@
-const { userPool, AmazonCognitoIdentity } = require('../lib/cognito-user-pool');
+const { createCognitoUser } = require('../lib/cognito-user-pool');
 const { traceError } = require('../lib/util');
 
 module.exports = app => {
@@ -6,21 +6,15 @@ module.exports = app => {
    * @description Change user password
    * @method POST
    */
-  app.post('/auth/changepassword', (req, res) => {
+  app.post('/user/change-password', (req, res) => {
     try {
       const { username, oldPassword, newPassword, confirmPassword } = req.body;
 
       // check if password and confirm password are same
       if (newPassword !== confirmPassword) return res.json({ error: true, message: 'New password and confirm password don\'t match' });
 
-      // Make use of userPool with given username
-      const userData = {
-        Username: username,
-        Pool: userPool
-      };
-
-      // new cognitoUser instance
-      const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+      // Cognito User
+      const cognitoUser = createCognitoUser(username);
 
       // Change password of cognito user
       cognitoUser.changePassword(oldPassword, newPassword, (err, result) => {
@@ -31,6 +25,47 @@ module.exports = app => {
         }
 
         res.send({ success: true, ...result });
+      });
+    } catch ({ message }) {
+      res.status(500).send({ error: true, message });
+    }
+  });
+
+  /**
+   * @description Forgot Password
+   * @method POST
+   */
+  app.post('/user/forgot-password', (req, res) => {
+    try {
+      const cognitoUser = createCognitoUser(req.body.username);
+
+      cognitoUser.forgotPassword({
+        onSuccess: data => {
+          // successfully initiated reset password request
+          res.send({ success: true, ...data });
+        },
+        onFailure: err => res.send({ error: true, ...err })
+      });
+    } catch ({ message }) {
+      res.status(500).send({ error: true, message });
+    }
+  });
+
+  /**
+   * @description Confirm password
+   * @method POST
+   */
+  app.post('/user/confirm-password', (req, res) => {
+    try {
+      const { username, newPassword, verificationCode } = req.body;
+      const cognitoUser = createCognitoUser(username);
+      cognitoUser.confirmPassword(verificationCode, newPassword, {
+        onSuccess() {
+          res.send({success: true, message: 'Password Confirmed!'});
+        },
+        onFailure(err) {
+          res.send({error: true, message: 'Password not confirmed!'});
+        }
       });
     } catch ({ message }) {
       res.status(500).send({ error: true, message });
