@@ -1,9 +1,58 @@
 const { userPool, AmazonCognitoIdentity } = require('../lib/cognito-user-pool');
-const { showError, traceError } = require('../lib/util');
+const { traceError } = require('../lib/util');
+
 
 module.exports = app => {
+  /**
+   * @description Login user with username and password
+   * @method POST
+   */
   app.post('/auth/login', (req, res) => {
-    res.send('Hello root');
+    try {
+      // Destructure username and password from request body
+      const { username, password } = req.body;
+
+      // Auth data
+      const authenticationData = {
+        Username: username,
+        Password: password
+      };
+
+      // Auth details for Cognito
+      const authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails(authenticationData);
+
+      // Make use of userPool with given username
+      const userData = {
+        Username: username,
+        Pool: userPool
+      };
+
+      // new cognitoUser instance
+      const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+
+      // Authenticate with auth details
+      cognitoUser.authenticateUser(authenticationDetails, {
+        // Handle on success event of cognito auth user
+        onSuccess: result => {
+
+          // Hide Identity server path from client
+          if (result.accessToken.payload.hasOwnProperty('iss'))
+            delete result.accessToken.payload.iss;
+
+          // Send the response back to client in JSON
+          res.send({
+            ...result.accessToken.payload,
+            accessToken: result.accessToken.jwtToken,
+            refreshToken: result.refreshToken.token
+          });
+        },
+
+        // Handle on failure event of cognito auth user
+        onFailure: err => res.send({error: true, ...err})
+      });
+    } catch ({ message }) {
+      res.status(500).send({ error: true, message });
+    }
   });
 
   /**
@@ -23,7 +72,6 @@ module.exports = app => {
 
       // Accept multiple user attributes including custom attributes as configured in Cognito user pool
       for (let i = 0; i < attributes.length; i++) {
-        new AmazonCognitoIdentity
         attributeList.push(new AmazonCognitoIdentity.CognitoUserAttribute({
           Name: attributes[i].name,
           Value: attributes[i].value
@@ -39,10 +87,10 @@ module.exports = app => {
 
         res.send(data.user);
       })
-    } catch({message}) {
-      res.send({
+    } catch ({ message }) {
+      res.status(500).send({
         error: true,
-        messsage
+        message
       });
     }
   });
@@ -58,18 +106,47 @@ module.exports = app => {
         Username: username,
         Pool: userPool
       }
-  
+
       const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
       cognitoUser.confirmRegistration(code, true, (err, data) => {
         if (err) {
           traceError(`Error while confirming registration (auth.js): ${err.message}`);
-          return res.send({error: true, message: err.message});
+          return res.send({ error: true, message: err.message });
         }
-  
+
         res.send(data);
       });
-    } catch({message}) {
-      res.send({
+    } catch ({ message }) {
+      res.status(500).send({
+        error: true,
+        messsage
+      });
+    }
+  });
+
+  /**
+   * @description Resend Confirmation code
+   * @method POST
+   */
+  app.post('/auth/resendconfirmationcode', (req, res) => {
+    try {
+      const { username } = req.body;
+      const userData = {
+        Username: username,
+        Pool: userPool
+      }
+
+      const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+      cognitoUser.resendConfirmationCode((err, data) => {
+        if (err) {
+          traceError(`Error while resending confirmation code (auth.js): ${err.message}`);
+          return res.send({ error: true, message: err.message });
+        }
+
+        res.send(data);
+      });
+    } catch ({ message }) {
+      res.status(500).send({
         error: true,
         messsage
       });
