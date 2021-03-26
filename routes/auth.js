@@ -41,6 +41,7 @@ module.exports = app => {
 
           // Send the response back to client in JSON
           res.send({
+            success: true,
             ...result.accessToken.payload,
             accessToken: result.accessToken.jwtToken,
             refreshToken: result.refreshToken.token
