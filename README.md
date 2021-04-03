@@ -1,3 +1,13 @@
 # Hasura and AWS Cognito Connector
 
 Work in Progress
+
+
+## Environment Variables
+* CLAIM_METHOD
+* PUBLIC_ROLE
+* USER_ID_ATTRIBUTE
+* USER_ROLE_ATTRIBUTE
+* AWS_REGION
+* COGNITO_CLIENT_ID
+* COGNITO_USER_POOL_ID

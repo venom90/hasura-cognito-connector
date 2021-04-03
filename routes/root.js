@@ -6,4 +6,7 @@ module.exports = app => {
   app.get('/health', (req, res) => {
     res.status(200).send('ok');
   })
+
+  app.get('/', (req, res) => res.status(200).send('void'));
+  app.get('/favicon.ico', (req, res) => res.status(200).send('void'));
 }
