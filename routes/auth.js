@@ -1,5 +1,6 @@
 const { AmazonCognitoIdentity, createCognitoUser, userPool } = require('../lib/cognito-user-pool');
 const { traceError } = require('../lib/util');
+const { cognitoidentityserviceprovider } = require('../lib/cognito-identity-service-provider');
 
 
 module.exports = app => {
@@ -27,7 +28,15 @@ module.exports = app => {
       // Authenticate with auth details
       cognitoUser.authenticateUser(authenticationDetails, {
         // Handle on success event of cognito auth user
-        onSuccess: result => {
+        onSuccess: async result => {
+
+          const params = { AccessToken: result.accessToken.jwtToken };
+          const userResult = await cognitoidentityserviceprovider.getUser(params).promise();
+
+          // Fetch all attributes
+          const attributes = userResult.UserAttributes;
+          // Fetch Hasura User id
+          const user_id = attributes.find(attribute => attribute.Name === process.env.USER_ID_ATTRIBUTE).Value;
 
           // Send the response back to client in JSON
           res.send({
@@ -35,7 +44,8 @@ module.exports = app => {
             ...result.accessToken.payload,
             accessToken: result.accessToken.jwtToken,
             refreshToken: result.refreshToken.token,
-            idToken: result.idToken
+            idToken: result.idToken,
+            user_id: user_id
           });
         },
 

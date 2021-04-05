@@ -22,9 +22,10 @@ module.exports = app => {
 
         const attributes = userResult.UserAttributes;
         const role = attributes.find(attribute => attribute.Name === process.env.USER_ROLE_ATTRIBUTE).Value;
+        const user_id = attributes.find(attribute => attribute.Name === process.env.USER_ID_ATTRIBUTE).Value;
         
         res.send({
-          "X-Hasura-User-Id": userResult.Username,
+          "X-Hasura-User-Id": user_id,
           "X-Hasura-Role": role
         })
       }
