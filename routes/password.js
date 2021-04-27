@@ -52,19 +52,21 @@ module.exports = app => {
   });
 
   /**
-   * @description Confirm password
+   * @description Reset password
    * @method POST
    */
-  app.post('/user/confirm-password', (req, res) => {
+  app.post('/user/reset-password', (req, res) => {
     try {
-      const { username, newPassword, verificationCode } = req.body;
+      const { username, password, code } = req.body;
+
       const cognitoUser = createCognitoUser(username);
-      cognitoUser.confirmPassword(verificationCode, newPassword, {
+
+      cognitoUser.confirmPassword(code, password, {
         onSuccess() {
-          res.send({success: true, message: 'Password Confirmed!'});
+          res.send({ error: false, message: 'Password Confirmed!'});
         },
         onFailure(err) {
-          res.send({error: true, message: 'Password not confirmed!'});
+          res.send({error: true, message: err.message || 'Password not confirmed!'});
         }
       });
     } catch ({ message }) {
