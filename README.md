@@ -12,9 +12,19 @@ A microservice to connect AWS cognito with Hasura. This program is written in No
 * COGNITO_CLIENT_ID : Cognito Client ID
 * COGNITO_USER_POOL_ID : Cognito User pool
 
+# Prerequisite
+
+* Make sure Docker installed on you system
+* Make sure Node.js version 18.17.0 is installed on your system
+
 # Installation
 
-Build Dockerfile
+Clone the repository
+```
+git clone git@github.com:venom90/hasura-cognito-connector.git
+```
+
+Build Dockerfile from source
 
 ```
 docker build -t hasura-connector:latest .

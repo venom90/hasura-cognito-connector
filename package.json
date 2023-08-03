@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Hasura and AWS Cognitor Connector",
   "engines": {
-    "node": ">=14.16.0"
+    "node": ">=18.17.0"
   },
   "main": "server.js",
   "scripts": {
@@ -22,17 +22,17 @@
   },
   "homepage": "https://github.com/venom90/hasura-cognito-connector#readme",
   "dependencies": {
-    "amazon-cognito-identity-js": "^4.5.12",
-    "aws-sdk": "^2.854.0",
+    "amazon-cognito-identity-js": "^4.6.3",
+    "aws-sdk": "^2.1429.0",
     "bluebird": "^3.7.2",
-    "body-parser": "^1.19.0",
-    "chalk": "^4.1.0",
+    "body-parser": "^1.20.2",
+    "chalk": "^4.1.2",
     "cors": "^2.8.5",
-    "dotenv": "^8.2.0",
-    "express": "^4.17.1",
+    "dotenv": "^8.6.0",
+    "express": "^4.18.2",
     "jwt-decode": "^3.1.2"
   },
   "devDependencies": {
-    "nodemon": "^2.0.7"
+    "nodemon": "^3.0.1"
   }
 }
