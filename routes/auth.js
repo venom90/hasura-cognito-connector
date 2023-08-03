@@ -1,8 +1,74 @@
 const { AmazonCognitoIdentity, createCognitoUser, userPool } = require('../lib/cognito-user-pool');
 const { traceError } = require('../lib/util');
+const { cognitoidentityserviceprovider } = require('../lib/cognito-identity-service-provider');
 
 
 module.exports = app => {
+  app.post('/auth/actions/login', (req, res) => {
+    try {
+      // Destructure username and password from request body
+      const { username, password } = req.body.input;
+
+      // Auth data
+      const authenticationData = {
+        Username: username,
+        Password: password
+      };
+
+      // Auth details for Cognito
+      const authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails(authenticationData);
+
+      // Cognito User
+      const cognitoUser = createCognitoUser(username);
+
+      // Authenticate with auth details
+      cognitoUser.authenticateUser(authenticationDetails, {
+        // Handle on success event of cognito auth user
+        onSuccess: async result => {
+
+          const params = { AccessToken: result.accessToken.jwtToken };
+          const userResult = await cognitoidentityserviceprovider.getUser(params).promise();
+
+          // Fetch all attributes
+          const attributes = userResult.UserAttributes;
+          // Fetch Hasura User id
+          const user_id = attributes.find(attribute => attribute.Name === process.env.USER_ID_ATTRIBUTE).Value;
+
+          // Send the response back to client in JSON
+          res.send({
+            message: '',
+            error: false,
+            success: true,
+            accessToken: result.accessToken.jwtToken,
+            refreshToken: result.refreshToken.token,
+            idToken: result.idToken,
+            user_id
+          });
+        },
+
+        // Handle on failure event of cognito auth user
+        onFailure: err => res.send({ 
+          message: err.message,
+          error: true,
+          success: false,
+          accessToken: '',
+          refreshToken: '',
+          idToken: '',
+          user_id: ''
+         })
+      });
+    } catch ({ message }) {
+      res.status(500).send({
+        message: message,
+        error: true,
+        success: false,
+        accessToken: '',
+        refreshToken: '',
+        idToken: '',
+        user_id: ''
+      });
+    }
+  })
   /**
    * @description Login user with username and password
    * @method POST
@@ -27,18 +93,24 @@ module.exports = app => {
       // Authenticate with auth details
       cognitoUser.authenticateUser(authenticationDetails, {
         // Handle on success event of cognito auth user
-        onSuccess: result => {
+        onSuccess: async result => {
 
-          // Hide Identity server path from client
-          if (result.accessToken.payload.hasOwnProperty('iss'))
-            delete result.accessToken.payload.iss;
+          const params = { AccessToken: result.accessToken.jwtToken };
+          const userResult = await cognitoidentityserviceprovider.getUser(params).promise();
+
+          // Fetch all attributes
+          const attributes = userResult.UserAttributes;
+          // Fetch Hasura User id
+          const user_id = attributes.find(attribute => attribute.Name === process.env.USER_ID_ATTRIBUTE).Value;
 
           // Send the response back to client in JSON
           res.send({
             success: true,
             ...result.accessToken.payload,
             accessToken: result.accessToken.jwtToken,
-            refreshToken: result.refreshToken.token
+            refreshToken: result.refreshToken.token,
+            idToken: result.idToken,
+            user_id: user_id
           });
         },
 
@@ -59,8 +131,10 @@ module.exports = app => {
    */
   app.post('/auth/signup', (req, res) => {
     try {
-      const { email, attributes, password, confirmPassword } = req.body;
+      const { email,username, attributes, password, confirmPassword } = req.body;
       const attributeList = [];
+
+      const usr = username ? username : email;
 
       // check if password and confirm password are same
       if (password !== confirmPassword) return res.json({ error: true, message: 'Password and confirm password don\'t match' });
@@ -73,13 +147,18 @@ module.exports = app => {
         }));
       }
 
-      // UserPool SignUp with email and password
-      userPool.signUp(email, password, attributeList, null, (err, data) => {
+      // Role with default role attribute
+      attributeList.push(new AmazonCognitoIdentity.CognitoUserAttribute({
+        Name: process.env.USER_ROLE_ATTRIBUTE || 'custom:role',
+        Value: process.env.USER_DEFAULT_ROLE || 'subscriber'
+      }));
+
+      // UserPool SignUp with username/email and password
+      userPool.signUp(usr, password, attributeList, null, (err, data) => {
         if (err) {
           traceError(`Cognito SignUp Error (auth.js): ${err.message}`);
           return res.send({ error: true, message: err.message });
         }
-
         res.send(data.user);
       })
     } catch ({ message }) {
@@ -136,10 +215,10 @@ module.exports = app => {
 
         res.send(data);
       });
-    } catch ({ message }) {
+    } catch (err) {
       res.status(500).send({
         error: true,
-        messsage
+        messsage: err.message
       });
     }
   });

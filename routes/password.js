@@ -1,4 +1,4 @@
-const { createCognitoUser } = require('../lib/cognito-user-pool');
+const { createCognitoUser, userPool } = require('../lib/cognito-user-pool');
 const { traceError } = require('../lib/util');
 
 module.exports = app => {
@@ -14,13 +14,13 @@ module.exports = app => {
       if (newPassword !== confirmPassword) return res.json({ error: true, message: 'New password and confirm password don\'t match' });
 
       // Cognito User
-      const cognitoUser = createCognitoUser(username);
+      const cognitoUser = userPool.getCurrentUser();
 
       // Change password of cognito user
       cognitoUser.changePassword(oldPassword, newPassword, (err, result) => {
         if (err) {
           traceError(`Error while changing user password (password.js) ${err.message}`);
-          res.send({ error: true, ...err });
+          res.send({ error: true, message: err.message });
           return;
         }
 
@@ -52,19 +52,21 @@ module.exports = app => {
   });
 
   /**
-   * @description Confirm password
+   * @description Reset password
    * @method POST
    */
-  app.post('/user/confirm-password', (req, res) => {
+  app.post('/user/reset-password', (req, res) => {
     try {
-      const { username, newPassword, verificationCode } = req.body;
+      const { username, password, code } = req.body;
+
       const cognitoUser = createCognitoUser(username);
-      cognitoUser.confirmPassword(verificationCode, newPassword, {
+
+      cognitoUser.confirmPassword(code, password, {
         onSuccess() {
-          res.send({success: true, message: 'Password Confirmed!'});
+          res.send({ error: false, message: 'Password Confirmed!'});
         },
         onFailure(err) {
-          res.send({error: true, message: 'Password not confirmed!'});
+          res.send({error: true, message: err.message || 'Password not confirmed!'});
         }
       });
     } catch ({ message }) {

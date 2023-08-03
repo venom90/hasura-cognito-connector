@@ -15,7 +15,10 @@ const warningStack = [];
 if (!process.env.COGNITO_USER_POOL_ID) { errorStack.push('Missing env variable: COGNITO_USER_POOL_ID');}
 if (!process.env.COGNITO_CLIENT_ID) { errorStack.push('Missing env variable: COGNITO_CLIENT_ID');}
 if (!process.env.PORT) { warningStack.push('Missing env variable: PORT. Using default port 3008.');};
-
+if (!process.env.AWS_REGION) { errorStack.push('Missing AWS_REGION env variable.') }
+if (!process.env.USER_ROLE_ATTRIBUTE) { warningStack.push('Missing env variable: USER_ROLE_ATTRIBUTE. Default: custom:role') }
+if (!process.env.USER_ID_ATTRIBUTE) { warningStack.push('Missing env variable: USER_ID_ATTRIBUTE. Default: custom:user_id') }
+if (!process.env.USER_DEFAULT_ROLE) { warningStack.push('Missing env variable: USER_DEFAULT_ROLE. Default: subscriber') }
 // IF initErrors THEN
 if (errorStack.length > 0) {
   // Error messages from the stack
